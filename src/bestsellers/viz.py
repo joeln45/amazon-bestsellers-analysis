@@ -1,17 +1,15 @@
-"""Styled plotting helpers for the bestsellers data story.
+"""Styled plotting helpers for the bestsellers analysis.
 
-Two conventions hold the visuals together:
+Two conventions keep the charts consistent:
 
-1. :func:`set_theme` is called once at the top of the notebook. Every chart
-   then inherits the same palette, fonts and grid, so the whole story reads as
-   one designed piece rather than a pile of mismatched plots.
-2. Each plot helper accepts ``ax=None`` and *returns the Axes it drew on*.
-   Passing an Axes lets the notebook compose multi-panel figures; returning one
-   lets a test assert on the result (bar count, title) without a window ever
-   opening.
+1. set_theme() is called once at the top of the notebook, so every chart shares
+   the same palette, fonts and grid.
+2. Each helper takes ax=None and returns the Axes it drew on. Passing an Axes
+   lets the notebook build multi-panel figures; returning one lets a test check
+   the result without a window opening.
 
-The helpers lean on the analysis functions in :mod:`bestsellers.analysis` for
-their numbers, so the maths lives in exactly one place.
+The helpers get their numbers from bestsellers.analysis, so the maths lives in
+one place.
 """
 from __future__ import annotations
 
@@ -21,16 +19,14 @@ from matplotlib.axes import Axes
 
 from . import analysis
 
-# One palette for the whole project. "deep" is seaborn's calm, professional
-# default; the whitegrid backdrop keeps focus on the data, not the chrome.
+# One palette for the whole project. "deep" on a whitegrid background keeps the
+# focus on the data.
 PALETTE = "deep"
 THEME_STYLE = "whitegrid"
 
-# A single accent colour for the "headline" charts, pulled from the palette so
-# it always matches. Index 0 of "deep" is the muted blue.
-ACCENT = sns.color_palette(PALETTE)[0]
-# A warm contrast colour (index 1, the orange) for highlighting one group.
-HIGHLIGHT = sns.color_palette(PALETTE)[1]
+# Accent colours pulled from the palette so they always match it.
+ACCENT = sns.color_palette(PALETTE)[0]     # muted blue
+HIGHLIGHT = sns.color_palette(PALETTE)[1]  # orange, for the highlighted group
 
 
 def set_theme() -> None:
@@ -39,18 +35,17 @@ def set_theme() -> None:
 
 
 def _get_ax(ax: Axes | None, figsize: tuple[float, float]) -> Axes:
-    """Return ``ax`` if given, otherwise make a fresh figure and Axes."""
+    """Return ax if given, otherwise make a fresh figure and Axes."""
     if ax is None:
         _, ax = plt.subplots(figsize=figsize)
     return ax
 
 
 def scatter_rating_vs_reviews(df, ax: Axes | None = None) -> Axes:
-    """The opening hook: star rating against review count.
+    """Star rating against review count: the opening hook.
 
-    The near-flat cloud is the point -- knowing a book's rating tells you almost
-    nothing about how many reviews (i.e. how much popularity) it gathered. The
-    Pearson r is printed in the title so the visual and the number agree.
+    The flat cloud is the point. The Pearson r goes in the title so the visual
+    and the number agree.
     """
     ax = _get_ax(ax, (7, 5))
     sns.scatterplot(
@@ -64,17 +59,15 @@ def scatter_rating_vs_reviews(df, ax: Axes | None = None) -> Axes:
 
 
 def bar_repeat_vs_one_hit(df, metric: str = "mean_reviews", ax: Axes | None = None) -> Axes:
-    """The reveal: one chosen metric for one-hit titles vs repeat bestsellers.
+    """One chosen metric for one-hit titles vs repeat bestsellers.
 
-    Defaults to ``mean_reviews`` -- repeat titles roughly double it while their
-    ``mean_rating`` stays level, which is the staying-power argument in one bar
-    pair. Pass another column from :func:`analysis.repeat_vs_one_hit` to compare
-    a different metric.
+    Defaults to mean_reviews, where repeat titles roughly double the one-hit
+    figure while their rating stays level. Pass another column from
+    analysis.repeat_vs_one_hit to compare a different metric.
     """
     summary = analysis.repeat_vs_one_hit(df)
     ax = _get_ax(ax, (6, 5))
-    colors = [ACCENT, HIGHLIGHT]
-    ax.bar(summary.index, summary[metric], color=colors)
+    ax.bar(summary.index, summary[metric], color=[ACCENT, HIGHLIGHT])
     ax.set_title(f"{metric.replace('_', ' ').title()}: one-hit vs repeat")
     ax.set_xlabel("")
     ax.set_ylabel(metric.replace("_", " ").title())
@@ -82,11 +75,7 @@ def bar_repeat_vs_one_hit(df, metric: str = "mean_reviews", ax: Axes | None = No
 
 
 def bar_staying_power(df, ax: Axes | None = None) -> Axes:
-    """How many titles chart for 1 year, 2 years, ... up to all 10.
-
-    The steep drop-off after a single appearance is the long tail of one-hit
-    wonders; the thin bars on the right are the enduring core.
-    """
+    """Number of titles that chart for 1 year, 2 years, up to all 10."""
     summary = analysis.staying_power_summary(df)
     ax = _get_ax(ax, (8, 5))
     ax.bar(summary.index, summary["titles"], color=ACCENT)
@@ -98,16 +87,13 @@ def bar_staying_power(df, ax: Axes | None = None) -> Axes:
 
 
 def barh_top_authors(df, by: str = "appearances", n: int = 10, ax: Axes | None = None) -> Axes:
-    """Horizontal bar chart of the top ``n`` authors by reach.
+    """Horizontal bar chart of the top n authors by reach.
 
-    ``by="appearances"`` rewards endurance, ``by="titles"`` rewards volume --
-    the two ways an author dominates the chart. Horizontal bars keep the (often
-    long) author names readable.
+    by="appearances" rewards endurance, by="titles" rewards volume. Horizontal
+    bars keep the long author names readable.
     """
     column = {"appearances": "author_appearances", "titles": "author_titles"}[by]
-    authors = analysis.top_authors(df, by=by, n=n)
-    # Plot smallest-at-bottom so the leader sits at the top of the chart.
-    authors = authors.sort_values(column)
+    authors = analysis.top_authors(df, by=by, n=n).sort_values(column)
     ax = _get_ax(ax, (8, 6))
     ax.barh(authors.index, authors[column], color=ACCENT)
     label = "chart appearances" if by == "appearances" else "distinct titles"
@@ -120,8 +106,7 @@ def barh_top_authors(df, by: str = "appearances", n: int = 10, ax: Axes | None =
 def heatmap_correlations(df, ax: Axes | None = None) -> Axes:
     """Correlation heatmap across rating, reviews and price.
 
-    A compact way to show that every off-diagonal value sits near zero: none of
-    the three numeric features move together with any strength.
+    Shows that every off-diagonal value sits near zero.
     """
     corr = analysis.correlation_matrix(df)
     ax = _get_ax(ax, (5, 4))
