@@ -15,9 +15,11 @@ amazon-bestsellers-analysis/
 ├── data/bestsellers.csv          # raw dataset
 ├── src/bestsellers/              # reusable analysis toolkit
 │   ├── data.py                   # load, clean, feature engineering
-│   ├── analysis.py               # EDA helpers
-│   └── viz.py                    # styled plotting helpers
+│   ├── analysis.py               # EDA helpers (correlations, staying power, authors)
+│   └── viz.py                    # styled plotting helpers (one shared theme)
 ├── tests/                        # pytest unit tests for the data layer
+├── scripts/export_figures.py     # regenerate the README charts
+├── images/                       # exported charts
 └── notebooks/
     └── bestsellers_analysis.ipynb   # the data story
 ```
@@ -39,7 +41,35 @@ pytest
 
 ## Key findings
 
-_Coming soon — populated once the analysis is complete._
+### 1. Quality ≠ popularity
+
+A book's star rating is **essentially uncorrelated** with its review count (Pearson `r ≈ -0.006`). Knowing how highly a book is rated tells you almost nothing about how many readers it reached. Price barely moves the needle either (`r ≈ -0.11`).
+
+![Rating vs reviews scatter](images/hook_rating_vs_reviews.png)
+
+The cloud is flat: there's no upward drift from low ratings to high. So if quality doesn't explain which books become hits — what does?
+
+### 2. Staying power is the real divide
+
+Reframing from *how good* to *how long*: **73% of the 351 titles chart in only a single year**. A small core endures — a handful reach five years or more, and one title (the *Publication Manual of the APA*) holds on for all ten.
+
+![Staying power distribution](images/staying_power.png)
+
+### 3. Repeat bestsellers aren't better — they last
+
+Split the books into one-hit titles and repeat bestsellers (two or more years) and the argument lands in one chart. Both groups share the **same mean rating (~4.6 stars)** — repeat bestsellers are *not* better-rated books — yet they carry **roughly twice the reviews** (≈15,800 vs ≈7,300).
+
+![Mean reviews: one-hit vs repeat](images/repeat_vs_one_hit.png)
+
+Popularity doesn't come from being rated higher; it compounds from staying on the chart year after year.
+
+### Two routes to the top
+
+Among authors, dominance comes two ways: **volume** (Jeff Kinney — 12 different *Diary of a Wimpy Kid* titles) or **endurance** (Suzanne Collins — just a few *Hunger Games* titles charting again and again across the decade).
+
+**The takeaway:** on this chart, lasting success is less about how good a book is and more about how long it stays in front of readers — staying power wins.
+
+> Charts are regenerated from the analysis module with `python scripts/export_figures.py`.
 
 ## About
 
